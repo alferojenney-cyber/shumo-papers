@@ -2,6 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="utf-8">
+<script>try{var t=localStorage.getItem("sm-theme");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>数模论文库</title>
 <style>
@@ -11,10 +12,14 @@
   --hover:#EEF0F4;--note:#FFFBEA;--note-line:#EFE3B5;--shadow:0 1px 2px rgba(20,24,32,.05),0 4px 14px rgba(20,24,32,.06);
   --guosai:#C2413A;--huawei:#2F5BD3;--huashu:#18865F;--mathorcup:#B26A12;
 }
-@media (prefers-color-scheme:dark){:root{
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   --bg:#121418;--side:#181B20;--card:#1D2026;--fg:#E7E9EE;--muted:#9097A3;--line:#2A2E36;
   --hover:#23272F;--note:#22211A;--note-line:#3D3923;--shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3);
   --guosai:#EE7E76;--huawei:#86A6F5;--huashu:#5CCB9C;--mathorcup:#E3A65A;color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121418;--side:#181B20;--card:#1D2026;--fg:#E7E9EE;--muted:#9097A3;--line:#2A2E36;
+  --hover:#23272F;--note:#22211A;--note-line:#3D3923;--shadow:0 1px 2px rgba(0,0,0,.35),0 6px 18px rgba(0,0,0,.3);
+  --guosai:#EE7E76;--huawei:#86A6F5;--huashu:#5CCB9C;--mathorcup:#E3A65A;color-scheme:dark}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html,body{margin:0;height:100%}
@@ -36,6 +41,8 @@ nav{display:flex;flex-direction:column;gap:2px}
 .nav em{font-style:normal;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
 .contact{display:flex;align-items:center;gap:10px;width:100%;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);cursor:pointer;font-size:14.5px}
 .contact:hover{background:var(--hover)}
+.foot-btns{display:flex;gap:8px}
+.foot-btns .contact{flex:1;justify-content:center}
 .modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:rgba(10,12,16,.55)}
 .modal figure{margin:0;max-width:min(360px,100%);background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
 .modal img{display:block;width:100%;height:auto}
@@ -93,7 +100,7 @@ main{min-width:0;padding:32px 40px 64px}
     <div class="brand">数模论文库<small>2026 赛季</small></div>
     <input class="search" id="q" type="search" placeholder="搜索题目或关键词" autocomplete="off">
     <nav id="nav"></nav>
-    <div class="side-foot"><button class="contact" id="contact">联系方式</button><p>备注保存在当前浏览器</p></div>
+    <div class="side-foot"><div class="foot-btns"><button class="contact" id="contact">联系方式</button><button class="contact" id="theme">深色</button></div><p>备注保存在当前浏览器</p></div>
   </aside>
   <main id="main"></main>
 </div>
@@ -159,6 +166,11 @@ function open(id){
   $('#reader').hidden=false;document.body.style.overflow='hidden';
 }
 function close(){$('#reader').hidden=true;$('#view').innerHTML='';document.body.style.overflow=''}
+const isDark=()=>document.documentElement.dataset.theme?document.documentElement.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
+const themeLabel=()=>{$('#theme').textContent=isDark()?'浅色':'深色'};
+$('#theme').onclick=()=>{const t=isDark()?'light':'dark';document.documentElement.dataset.theme=t;store.set('sm-theme',t);themeLabel()};
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',themeLabel);
+themeLabel();
 $('#contact').onclick=()=>{$('#modal').hidden=false};
 $('#mclose').onclick=()=>{$('#modal').hidden=true};
 $('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').hidden=true};
