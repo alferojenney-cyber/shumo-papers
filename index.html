@@ -34,7 +34,14 @@ nav{display:flex;flex-direction:column;gap:2px}
 .nav i{width:9px;height:9px;border-radius:50%;background:var(--c,var(--muted));flex:none}
 .nav span{flex:1}
 .nav em{font-style:normal;font-size:12.5px;color:var(--muted);font-variant-numeric:tabular-nums}
-.side-foot{margin-top:auto;font-size:12px;color:var(--muted);padding:0 8px}
+.contact{display:flex;align-items:center;gap:10px;width:100%;height:38px;padding:0 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);cursor:pointer;font-size:14.5px}
+.contact:hover{background:var(--hover)}
+.modal{position:fixed;inset:0;z-index:30;display:grid;place-items:center;padding:24px;background:rgba(10,12,16,.55)}
+.modal figure{margin:0;max-width:min(360px,100%);background:var(--card);border-radius:14px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35)}
+.modal img{display:block;width:100%;height:auto}
+.modal button{display:block;width:100%;height:44px;border:0;border-top:1px solid var(--line);background:var(--card);cursor:pointer;font-size:15px}
+.side-foot{margin-top:auto;font-size:12px;color:var(--muted)}
+.side-foot p{margin:10px 8px 0}
 
 main{min-width:0;padding:32px 40px 64px}
 .zone{max-width:1060px;margin:0 auto 44px}
@@ -67,7 +74,11 @@ main{min-width:0;padding:32px 40px 64px}
 @media (max-width:820px){
   .app{grid-template-columns:minmax(0,1fr)}
   aside{min-width:0;position:sticky;top:0;z-index:5;height:auto;padding:14px 16px 10px;gap:10px;border-right:0;border-bottom:1px solid var(--line)}
-  .brand small,.side-foot{display:none}
+  .brand small,.side-foot p{display:none}
+  aside{display:grid;grid-template-columns:1fr auto;align-items:center}
+  aside .search,aside nav{grid-column:1/-1}
+  .side-foot{grid-row:1;grid-column:2;margin:0}
+  .contact{width:auto;height:32px;font-size:13.5px}
   nav{flex-direction:row;overflow-x:auto;gap:6px}
   .nav{width:auto;flex:none;height:34px;border:1px solid var(--line)}
   main{padding:20px 16px 48px}
@@ -82,10 +93,12 @@ main{min-width:0;padding:32px 40px 64px}
     <div class="brand">数模论文库<small>2026 赛季</small></div>
     <input class="search" id="q" type="search" placeholder="搜索题目或关键词" autocomplete="off">
     <nav id="nav"></nav>
-    <div class="side-foot">备注保存在当前浏览器</div>
+    <div class="side-foot"><button class="contact" id="contact">联系方式</button><p>备注保存在当前浏览器</p></div>
   </aside>
   <main id="main"></main>
 </div>
+
+<div class="modal" id="modal" hidden><figure><img src="contact.jpg" alt="QQ 二维码" width="1080" height="1549"><button id="mclose">关闭</button></figure></div>
 
 <div class="reader" id="reader" hidden>
   <div class="top">
@@ -146,8 +159,11 @@ function open(id){
   $('#reader').hidden=false;document.body.style.overflow='hidden';
 }
 function close(){$('#reader').hidden=true;$('#view').innerHTML='';document.body.style.overflow=''}
+$('#contact').onclick=()=>{$('#modal').hidden=false};
+$('#mclose').onclick=()=>{$('#modal').hidden=true};
+$('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').hidden=true};
 $('#back').onclick=()=>{location.hash=''};
-addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#reader').hidden)location.hash=''});
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#modal').hidden)$('#modal').hidden=true;else if(!$('#reader').hidden)location.hash=''});
 function route(){const id=location.hash.slice(1);/^p\d\d$/.test(id)?open(id):close()}
 addEventListener('hashchange',route);
 if(filter!=='all'&&!COMPS.some(c=>c[0]===filter))filter='all';
