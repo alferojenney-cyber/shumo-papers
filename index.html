@@ -97,6 +97,22 @@ main{padding:40px 48px 80px}
   background:linear-gradient(135deg,var(--brand1),var(--brand2));box-shadow:0 8px 20px color-mix(in srgb,var(--brand1) 35%,transparent);transition:transform .15s,filter .2s}
 .notice .go:hover{filter:brightness(1.06)}
 .notice .go:active{transform:scale(.98)}
+.sep{height:1px;background:var(--line);margin:4px 10px}
+.nav svg{width:18px;height:18px;flex:none;margin-left:-4px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;opacity:.8}
+.nav.page[aria-current="true"]{background:color-mix(in srgb,var(--brand1) 13%,transparent);color:var(--brand1)}
+.lead{margin:-4px 0 20px;color:var(--muted);font-size:15px;max-width:720px}
+.masonry{columns:3 260px;column-gap:20px}
+.fb{break-inside:avoid;margin:0 0 20px;border-radius:16px;overflow:hidden;background:var(--card);border:1px solid var(--line);box-shadow:var(--shadow);cursor:zoom-in;
+  animation:rise .5s ease both;animation-delay:calc(var(--i) * 60ms);transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s}
+.fb:hover{transform:translateY(-4px);box-shadow:var(--shadow-hi)}
+.fb img{display:block;width:100%;height:auto}
+.fb figcaption{padding:12px 16px 14px;font-size:15px;line-height:1.6}
+.rules{max-width:760px;background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:12px 36px 28px;animation:rise .5s ease both}
+.rules h3{margin:26px 0 8px;font-size:18px;font-weight:700;display:flex;align-items:center;gap:10px}
+.rules h3::before{content:"";width:8px;height:8px;border-radius:50%;background:linear-gradient(135deg,var(--brand1),var(--brand2));flex:none}
+.rules p{margin:0 0 10px 18px;font-size:16px;line-height:1.85}
+.light{position:fixed;inset:0;z-index:40;display:grid;place-items:center;padding:24px;background:rgba(8,10,16,.82);cursor:zoom-out;animation:fade .2s ease}
+.light img{max-width:min(100%,900px);max-height:calc(100vh - 48px);border-radius:12px;box-shadow:0 24px 60px rgba(0,0,0,.5);animation:pop .25s cubic-bezier(.2,.8,.2,1)}
 @keyframes fade{from{opacity:0}}
 @keyframes pop{from{opacity:0;transform:scale(.94)}}
 
@@ -107,6 +123,8 @@ main{padding:40px 48px 80px}
   .brand{font-size:19px;padding:0}
   .logo{width:32px;height:32px;font-size:16px;border-radius:9px}
   .search,nav{grid-column:1/-1}
+  #nav2{margin-top:-6px}
+  .sep{display:none}
   .foot{grid-row:1;grid-column:2;margin:0}
   .pill{flex:none;height:34px;padding:0 12px;font-size:14px}
   nav{flex-direction:row;overflow-x:auto;gap:6px;scrollbar-width:none}
@@ -125,6 +143,7 @@ main{padding:40px 48px 80px}
     <div class="brand"><span class="logo">数</span>数模论文库</div>
     <input class="search" id="q" type="search" placeholder="搜索" autocomplete="off">
     <nav id="nav"></nav>
+    <nav id="nav2"></nav>
     <div class="foot"><button class="pill" id="contact">联系方式</button><button class="pill" id="theme">深色</button></div>
   </aside>
   <main id="main"></main>
@@ -133,6 +152,8 @@ main{padding:40px 48px 80px}
 <div class="modal" id="notice" hidden><div class="notice" role="dialog" aria-modal="true" aria-labelledby="ntitle"><h3 id="ntitle"></h3><div class="body" id="nbody"></div><button class="go" id="ngo">进入</button></div></div>
 
 <div class="modal" id="modal" hidden><figure><img src="contact.jpg" alt="QQ 二维码" width="1080" height="1549"><button id="mclose">关闭</button></figure></div>
+
+<div class="light" id="light" hidden><img alt=""></div>
 
 <div class="reader" id="reader" hidden>
   <div class="top">
@@ -146,6 +167,8 @@ main{padding:40px 48px 80px}
 
 <script src="text.js"></script>
 <script src="notice.js"></script>
+<script src="feedback.js"></script>
+<script src="rules.js"></script>
 <script>
 const T=window.SITE||{};
 const PAPERS=(window.PAPERS||[]).map(p=>({id:p.编号,comp:p.赛事,letter:p.题号,title:p.题目,kw:String(p.关键词||'').split(/\s+/),path:p.文件}));
@@ -157,10 +180,34 @@ const store={get(k){try{return localStorage.getItem(k)||''}catch(e){return ''}},
 let filter=store.get('sm-filter')||'all';
 if(filter!=='all'&&!COMPS.some(c=>c[0]===filter))filter='all';
 
+const FB=window.FEEDBACK||{},RU=window.RULES||{};
+const ICON={feedback:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>',rules:'<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>'};
+let view='list';
 function nav(){
-  $('#nav').innerHTML=[['all',T.全部||'全部'],...COMPS].map(([k,n])=>`<button class="nav" data-k="${k}" aria-current="${filter===k}"${k==='all'?'':` style="--c:var(--${k})"`}><i></i>${n}</button>`).join('');
+  $('#nav2').innerHTML='<div class="sep"></div>'+[['feedback',FB.页面名||'一些反馈'],['rules',RU.页面名||'规则']].map(([k,n])=>`<button class="nav page" data-v="${k}" aria-current="${view===k}">${ICON[k]}${esc(n)}</button>`).join('');
+  $('#nav').innerHTML=[['all',T.全部||'全部'],...COMPS].map(([k,n])=>`<button class="nav" data-k="${k}" aria-current="${view==='list'&&filter===k}"${k==='all'?'':` style="--c:var(--${k})"`}><i></i>${n}</button>`).join('');
+}
+function renderFeedback(){
+  const items=(FB.图片||[]).map(x=>typeof x==='string'?{文件:x}:x).filter(x=>x&&x.文件);
+  const src=x=>'feedback/'+encodeURIComponent(x.文件);
+  $('#main').innerHTML=`<section class="zone" style="--c:var(--brand1)"><div class="zone-head"><i></i><h2>${esc(FB.页面名||'一些反馈')}</h2></div>
+    ${FB.说明?`<p class="lead">${esc(FB.说明)}</p>`:''}
+    ${items.length?`<div class="masonry">${items.map((x,i)=>`<figure class="fb" data-src="${src(x)}" style="--i:${i}"><img src="${src(x)}" alt="${esc(x.说明||'')}" loading="lazy">${x.说明?`<figcaption>${esc(x.说明)}</figcaption>`:''}</figure>`).join('')}</div>`:''}
+  </section>`;
+}
+function renderRules(){
+  const blocks=String(RU.正文||'').trim().split(/\n\s*\n/).filter(Boolean);
+  const html=blocks.map(b=>b.split('\n').reduce((acc,line)=>{
+    const t=line.trim();if(!t)return acc;
+    if(t.startsWith('#'))acc.push(`<h3>${esc(t.replace(/^#+\s*/,''))}</h3>`);
+    else if(acc.length&&acc[acc.length-1].startsWith('<p>'))acc[acc.length-1]=acc[acc.length-1].replace(/<\/p>$/,`<br>${esc(t)}</p>`);
+    else acc.push(`<p>${esc(t)}</p>`);
+    return acc},[]).join('')).join('');
+  $('#main').innerHTML=`<section class="zone" style="--c:var(--brand1)"><div class="zone-head"><i></i><h2>${esc(RU.页面名||'规则')}</h2></div><article class="rules">${html}</article></section>`;
 }
 function render(){
+  if(view==='feedback')return renderFeedback();
+  if(view==='rules')return renderRules();
   const q=$('#q').value.trim().toLowerCase();
   let h='',i=0;
   for(const [k,n] of COMPS){
@@ -175,9 +222,11 @@ function render(){
   }
   $('#main').innerHTML=h||`<p class="none">${esc(T.没有搜到||'')}</p>`;
 }
-$('#nav').onclick=e=>{const b=e.target.closest('.nav');if(!b)return;filter=b.dataset.k;store.set('sm-filter',filter);nav();render();scrollTo({top:0,behavior:'smooth'})};
-$('#q').oninput=render;
-$('#main').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)location.hash=c.dataset.id});
+$('#nav').onclick=e=>{const b=e.target.closest('.nav');if(!b)return;filter=b.dataset.k;store.set('sm-filter',filter);if(view!=='list'){location.hash='';return}nav();render();scrollTo({top:0,behavior:'smooth'})};
+$('#nav2').onclick=e=>{const b=e.target.closest('.nav');if(b)location.hash=b.dataset.v};
+$('#q').oninput=()=>{if(view!=='list')location.hash='';else render()};
+$('#main').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)location.hash=c.dataset.id;const f=e.target.closest('.fb');if(f){$('#light img').src=f.dataset.src;$('#light').hidden=false}});
+$('#light').onclick=()=>{$('#light').hidden=true};
 const timers={};
 $('#main').addEventListener('input',e=>{
   const t=e.target;if(t.tagName!=='TEXTAREA')return;
@@ -218,8 +267,14 @@ function open(id){
 }
 function close(){$('#reader').hidden=true;$('#view').innerHTML='';document.body.style.overflow=''}
 $('#back').onclick=()=>{location.hash=''};
-addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#notice').hidden)closeNotice();else if(!$('#modal').hidden)$('#modal').hidden=true;else if(!$('#reader').hidden)location.hash=''});
-function route(){const id=location.hash.slice(1);/^p\d\d$/.test(id)?open(id):close()}
+addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#light').hidden)$('#light').hidden=true;else if(!$('#notice').hidden)closeNotice();else if(!$('#modal').hidden)$('#modal').hidden=true;else if(!$('#reader').hidden)location.hash=''});
+function route(){
+  const id=location.hash.slice(1);
+  if(/^p\d\d$/.test(id))return open(id);
+  close();
+  const v=id==='feedback'||id==='rules'?id:'list';
+  if(v!==view){view=v;nav();render();scrollTo(0,0)}
+}
 addEventListener('hashchange',route);
 themeLabel();nav();render();route();
 </script>
