@@ -151,7 +151,7 @@ main{padding:40px 48px 80px}
 
 <div class="modal" id="notice" hidden><div class="notice" role="dialog" aria-modal="true" aria-labelledby="ntitle"><h3 id="ntitle"></h3><div class="body" id="nbody"></div><button class="go" id="ngo">进入</button></div></div>
 
-<div class="modal" id="modal" hidden><figure><img src="contact.jpg" alt="QQ 二维码" width="1080" height="1549"><button id="mclose">关闭</button></figure></div>
+<div class="modal" id="modal" hidden><figure><img src="contact.jpg" data-fresh alt="QQ 二维码" width="1080" height="1549"><button id="mclose">关闭</button></figure></div>
 
 <div class="light" id="light" hidden><img alt=""></div>
 
@@ -165,10 +165,7 @@ main{padding:40px 48px 80px}
   <div id="view"></div>
 </div>
 
-<script src="text.js"></script>
-<script src="notice.js"></script>
-<script src="feedback.js"></script>
-<script src="rules.js"></script>
+<script>for(const f of ["text.js","notice.js","feedback.js","rules.js"])document.write('<script src="'+f+'?v='+Date.now()+'"><\/script>')</script>
 <script>
 const T=window.SITE||{};
 const PAPERS=(window.PAPERS||[]).map(p=>({id:p.编号,comp:p.赛事,letter:p.题号,title:p.题目,kw:String(p.关键词||'').split(/\s+/),path:p.文件}));
@@ -253,7 +250,7 @@ if(NT){
 }
 const closeNotice=()=>{$('#notice').hidden=true};
 $('#ngo').onclick=closeNotice;
-$('#contact').onclick=()=>{$('#modal').hidden=false};
+$('#contact').onclick=()=>{const im=$('#modal img');if(im.dataset.fresh!=null){im.src='contact.jpg?v='+Date.now();delete im.dataset.fresh}$('#modal').hidden=false};
 $('#mclose').onclick=()=>{$('#modal').hidden=true};
 $('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').hidden=true};
 
