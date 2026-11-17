@@ -83,8 +83,13 @@ main{padding:40px 48px 80px}
 .top button:hover,.top a:hover{background:var(--hover)}
 .top p{flex:1;min-width:0;margin:0;font-size:16px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .top i{width:10px;height:10px;border-radius:50%;background:var(--c);flex:none}
-#view{flex:1;display:flex}
-#view iframe{flex:1;width:100%;border:0}
+#view{flex:1;overflow:auto;-webkit-overflow-scrolling:touch;padding:20px 16px 40px;background:var(--bg2)}
+.pg{position:relative;width:100%;max-width:900px;margin:0 auto 16px;background:#fff;border-radius:6px;box-shadow:var(--shadow);overflow:hidden}
+.pg canvas{display:block;width:100%;height:100%}
+.vmsg{max-width:900px;margin:40px auto;text-align:center;color:var(--muted);font-size:15px}
+.vbar{position:sticky;top:0;height:3px;margin:-20px -16px 17px;background:linear-gradient(90deg,var(--c),transparent);transform-origin:left;animation:load 1.2s ease-in-out infinite}
+@keyframes load{0%{transform:scaleX(0)}100%{transform:scaleX(1);opacity:0}}
+.nosave img:not(.qr),.nosave canvas{-webkit-user-drag:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .modal{position:fixed;inset:0;z-index:30;display:grid;grid-template-columns:minmax(0,1fr);place-items:center;padding:24px;background:rgba(8,10,16,.55);backdrop-filter:blur(6px);animation:fade .2s ease}
 .modal figure{margin:0;max-width:min(360px,100%);background:var(--card);border-radius:20px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.4);animation:pop .25s cubic-bezier(.2,.8,.2,1)}
 .modal img{display:block;width:100%;height:auto}
@@ -138,7 +143,7 @@ main{padding:40px 48px 80px}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
-<body>
+<body class="nosave">
 <div class="app">
   <aside>
     <div class="brand"><span class="logo">数</span>数模论文库</div>
@@ -152,7 +157,7 @@ main{padding:40px 48px 80px}
 
 <div class="modal" id="notice" hidden><div class="notice" role="dialog" aria-modal="true" aria-labelledby="ntitle"><h3 id="ntitle"></h3><div class="body" id="nbody"></div><button class="go" id="ngo">进入</button></div></div>
 
-<div class="modal" id="modal" hidden><figure><img src="contact.jpg" data-fresh alt="QQ 二维码" width="1080" height="1549"><button id="mclose">关闭</button></figure></div>
+<div class="modal" id="modal" hidden><figure><img class="qr" src="contact.jpg" data-fresh alt="QQ 二维码" width="1080" height="1549"><button id="mclose">关闭</button></figure></div>
 
 <div class="light" id="light" hidden><img alt=""></div>
 
@@ -161,7 +166,6 @@ main{padding:40px 48px 80px}
     <button id="back">返回</button>
     <i></i>
     <p id="rt"></p>
-    <a id="orig" target="_blank" rel="noopener">新窗口</a>
   </div>
   <div id="view"></div>
 </div>
@@ -230,7 +234,7 @@ const setText=(sel,v)=>{if(v!=null)$(sel).textContent=v};
 document.title=T.标题||document.title;
 $('.brand').innerHTML=`<span class="logo">${esc(T.图标字||'')}</span>${esc(T.标题||'')}`;
 $('#q').placeholder=T.搜索框提示||'';
-setText('#contact',T.联系方式);setText('#ngo',T.进入);setText('#mclose',T.关闭);setText('#back',T.返回);setText('#orig',T.新窗口);
+setText('#contact',T.联系方式);setText('#ngo',T.进入);setText('#mclose',T.关闭);setText('#back',T.返回);
 $('#modal img').alt=T.二维码说明||'';
 const root=document.documentElement;
 const isDark=()=>root.dataset.theme?root.dataset.theme==='dark':matchMedia('(prefers-color-scheme:dark)').matches;
@@ -249,15 +253,42 @@ $('#contact').onclick=()=>{const im=$('#modal img');if(im.dataset.fresh!=null){i
 $('#mclose').onclick=()=>{$('#modal').hidden=true};
 $('#modal').onclick=e=>{if(e.target.id==='modal')$('#modal').hidden=true};
 
-function open(id){
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/',PDFX='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/';
+let pdfLib,doc,seq=0,io;
+const loadLib=()=>pdfLib||(pdfLib=new Promise((ok,no)=>{const sc=document.createElement('script');sc.src=PDFJS+'pdf.min.js';
+  sc.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.js';ok(pdfjsLib)};sc.onerror=()=>{pdfLib=null;no()};document.head.appendChild(sc)}));
+async function drawPage(el,my){
+  if(el.dataset.done)return;el.dataset.done=1;
+  const pg=await doc.getPage(+el.dataset.n);if(my!==seq)return;
+  const base=pg.getViewport({scale:1});el.style.aspectRatio=base.width+'/'+base.height;
+  const scale=Math.min(el.clientWidth*Math.min(devicePixelRatio||1,2)/base.width,3);
+  const vp=pg.getViewport({scale}),cv=document.createElement('canvas');
+  cv.width=Math.floor(vp.width);cv.height=Math.floor(vp.height);
+  await pg.render({canvasContext:cv.getContext('2d'),viewport:vp}).promise;
+  if(my===seq)el.appendChild(cv);
+}
+async function open(id){
   const p=PAPERS.find(x=>x.id===id);if(!p)return close();
   $('#reader').style.setProperty('--c',`var(--${p.comp})`);
   $('#rt').textContent=p.title;
-  $('#orig').href=url(p);
-  $('#view').innerHTML=`<iframe title="${esc(p.title)}" src="${url(p)}#view=FitH"></iframe>`;
+  const my=++seq,v=$('#view');
+  v.innerHTML='<div class="vbar"></div>';v.scrollTop=0;
   $('#reader').hidden=false;document.body.style.overflow='hidden';
+  try{
+    const lib=await loadLib();if(my!==seq)return;
+    const d=await lib.getDocument({url:url(p),rangeChunkSize:262144,disableAutoFetch:true,cMapUrl:PDFX+'cmaps/',cMapPacked:true,standardFontDataUrl:PDFX+'standard_fonts/'}).promise;
+    if(my!==seq){d.destroy();return}
+    doc=d;
+    const first=await d.getPage(1),vp=first.getViewport({scale:1});
+    v.innerHTML=Array.from({length:d.numPages},(_,i)=>`<div class="pg" data-n="${i+1}" style="aspect-ratio:${vp.width}/${vp.height}"></div>`).join('');
+    io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting)drawPage(e.target,my)}),{root:v,rootMargin:'1200px 0px'});
+    v.querySelectorAll('.pg').forEach(el=>io.observe(el));
+  }catch(e){if(my===seq)v.innerHTML='<p class="vmsg">加载失败，请刷新重试</p>'}
 }
-function close(){$('#reader').hidden=true;$('#view').innerHTML='';document.body.style.overflow=''}
+function close(){seq++;if(io){io.disconnect();io=null}if(doc){doc.destroy();doc=null}$('#reader').hidden=true;$('#view').innerHTML='';document.body.style.overflow=''}
+document.addEventListener('contextmenu',e=>{if(e.target.closest('img,canvas,#view')&&!e.target.closest('#modal'))e.preventDefault()});
+document.addEventListener('dragstart',e=>{if(e.target.closest('img,canvas'))e.preventDefault()});
+addEventListener('keydown',e=>{if((e.ctrlKey||e.metaKey)&&/^[sp]$/i.test(e.key))e.preventDefault()});
 $('#back').onclick=()=>{location.hash=''};
 addEventListener('keydown',e=>{if(e.key!=='Escape')return;if(!$('#light').hidden)$('#light').hidden=true;else if(!$('#notice').hidden)closeNotice();else if(!$('#modal').hidden)$('#modal').hidden=true;else if(!$('#reader').hidden)location.hash=''});
 function route(){
