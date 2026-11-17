@@ -179,10 +179,10 @@ let filter=store.get('sm-filter')||'all';
 if(filter!=='all'&&!COMPS.some(c=>c[0]===filter))filter='all';
 
 const FB=window.FEEDBACK||{},RU=window.RULES||{};
-const ICON={feedback:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>',rules:'<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>'};
+const ICON={notice:'<svg viewBox="0 0 24 24"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 21h4"/></svg>',feedback:'<svg viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg>',rules:'<svg viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7M9 7h3"/></svg>'};
 let view='list';
 function nav(){
-  $('#nav2').innerHTML='<div class="sep"></div>'+[['feedback',FB.页面名||'一些反馈'],['rules',RU.页面名||'规则']].map(([k,n])=>`<button class="nav page" data-v="${k}" aria-current="${view===k}">${ICON[k]}${esc(n)}</button>`).join('');
+  $('#nav2').innerHTML='<div class="sep"></div>'+[...((window.NOTICE_TEXT||'').trim()?[['notice','通知']]:[]),['feedback',FB.页面名||'一些反馈'],['rules',RU.页面名||'规则']].map(([k,n])=>`<button class="nav page" data-v="${k}" aria-current="${k!=='notice'&&view===k}">${ICON[k]}${esc(n)}</button>`).join('');
   $('#nav').innerHTML=[['all',T.全部||'全部'],...COMPS].map(([k,n])=>`<button class="nav" data-k="${k}" aria-current="${view==='list'&&filter===k}"${k==='all'?'':` style="--c:var(--${k})"`}><i></i>${n}</button>`).join('');
 }
 function renderFeedback(){
@@ -222,7 +222,7 @@ function render(){
   $('#main').innerHTML=h||`<p class="none">${esc(T.没有搜到||'')}</p>`;
 }
 $('#nav').onclick=e=>{const b=e.target.closest('.nav');if(!b)return;filter=b.dataset.k;store.set('sm-filter',filter);if(view!=='list'){location.hash='';return}nav();render();scrollTo({top:0,behavior:'smooth'})};
-$('#nav2').onclick=e=>{const b=e.target.closest('.nav');if(b)location.hash=b.dataset.v};
+$('#nav2').onclick=e=>{const b=e.target.closest('.nav');if(!b)return;if(b.dataset.v==='notice')$('#notice').hidden=false;else location.hash=b.dataset.v};
 $('#q').oninput=()=>{if(view!=='list')location.hash='';else render()};
 $('#main').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)location.hash=c.dataset.id;const f=e.target.closest('.fb');if(f){$('#light img').src=f.dataset.src;$('#light').hidden=false}});
 $('#light').onclick=()=>{$('#light').hidden=true};
