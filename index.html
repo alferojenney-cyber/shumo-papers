@@ -57,12 +57,9 @@ main{padding:40px 48px 80px}
 .zone-head i{width:12px;height:12px;border-radius:4px;background:var(--c);box-shadow:0 0 0 5px color-mix(in srgb,var(--c) 18%,transparent)}
 .zone-head{margin-bottom:22px}
 .zone-head::after{content:"";flex:1;height:2px;border-radius:2px;background:linear-gradient(90deg,color-mix(in srgb,var(--c) 40%,transparent),transparent)}
-.num{height:40px;min-width:64px;padding:0 16px;word-spacing:.4em;border:1.5px solid color-mix(in srgb,var(--c) 30%,transparent);border-radius:20px;
-  background:color-mix(in srgb,var(--c) 10%,var(--card));color:var(--c);font-size:20px;font-weight:700;text-align:center;font-variant-numeric:tabular-nums;
-  box-shadow:var(--shadow);transition:box-shadow .2s,border-color .2s,background .2s,transform .15s}
-.num:hover{transform:translateY(-1px)}
-.num:focus{outline:none;border-color:var(--c);box-shadow:0 0 0 4px color-mix(in srgb,var(--c) 18%,transparent),var(--shadow)}
-.num:placeholder-shown{border-style:dashed;background:transparent;box-shadow:none}
+.nums{display:flex;flex-wrap:wrap;gap:8px}
+.num{display:inline-grid;place-items:center;height:40px;min-width:64px;padding:0 16px;border:1.5px solid color-mix(in srgb,var(--c) 30%,transparent);border-radius:20px;
+  background:color-mix(in srgb,var(--c) 10%,var(--card));color:var(--c);font-size:20px;font-weight:700;font-variant-numeric:tabular-nums;box-shadow:var(--shadow)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:22px}
 .card{position:relative;display:flex;flex-direction:column;padding:0;border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--shadow);
   overflow:hidden;cursor:pointer;text-align:left;animation:rise .5s ease both;animation-delay:calc(var(--i) * 45ms);
@@ -169,7 +166,7 @@ main{padding:40px 48px 80px}
   <div id="view"></div>
 </div>
 
-<script>for(const f of ["text.js","notice.js","feedback.js","rules.js"])document.write('<script src="'+f+'?v='+Date.now()+'"><\/script>')</script>
+<script>for(const f of ["text.js","numbers.js","notice.js","feedback.js","rules.js"])document.write('<script src="'+f+'?v='+Date.now()+'"><\/script>')</script>
 <script>
 const T=window.SITE||{};
 const PAPERS=(window.PAPERS||[]).map(p=>({id:p.编号,comp:p.赛事,letter:p.题号,title:p.题目,kw:String(p.关键词||'').split(/\s+/),path:p.文件}));
@@ -206,8 +203,8 @@ function renderRules(){
     return acc},[]).join('')).join('');
   $('#main').innerHTML=`<section class="zone" style="--c:var(--brand1)"><div class="zone-head"><i></i><h2>${esc(RU.页面名||'规则')}</h2></div><article class="rules">${html}</article></section>`;
 }
-const digits=v=>String(v||'').replace(/[^\d\s]/g,' ').replace(/\s+/g,' ').replace(/^ /,'').slice(0,30);
-const fit=t=>{t.style.width=`calc(${Math.max(1,t.value.length)}ch + ${(t.value.split(' ').length-1)*.4}em + 40px)`};
+const NUMS=window.NUMBERS||{};
+const nums=(k,n)=>String(NUMS[n]??NUMS[k]??'').split(/[^\d.]+/).filter(Boolean);
 function render(){
   if(view==='feedback')return renderFeedback();
   if(view==='rules')return renderRules();
@@ -218,26 +215,17 @@ function render(){
     const ps=PAPERS.filter(p=>p.comp===k&&(!q||(p.title+p.kw.join('')+n).toLowerCase().includes(q))).sort((a,b)=>a.letter.localeCompare(b.letter));
     if(q&&!ps.length)continue;
     h+=`<section class="zone" style="--c:var(--${k})">
-      <div class="zone-head"><i></i><h2>${n}</h2><input class="num" id="note-${k}" data-k="${k}" inputmode="decimal" autocomplete="off" placeholder=" " aria-label="${n}" value="${digits(store.get('sm-note-'+k)).trim()}"></div>
+      <div class="zone-head"><i></i><h2>${n}</h2>${(x=>x.length?`<div class="nums">${x.map(v=>`<span class="num">${v}</span>`).join('')}</div>`:'')(nums(k,n))}</div>
       <div class="grid">${ps.map(p=>`<button class="card" data-id="${p.id}" style="--i:${i++}"><div class="cover"><img src="thumbs/${p.id}.jpg" alt="" loading="lazy"><span class="tag">${p.letter}</span></div><p>${esc(p.title)}</p></button>`).join('')}</div>
     </section>`;
   }
   $('#main').innerHTML=h||`<p class="none">${esc(T.没有搜到||'')}</p>`;
-  document.querySelectorAll('.num').forEach(fit);
 }
 $('#nav').onclick=e=>{const b=e.target.closest('.nav');if(!b)return;filter=b.dataset.k;store.set('sm-filter',filter);if(view!=='list'){location.hash='';return}nav();render();scrollTo({top:0,behavior:'smooth'})};
 $('#nav2').onclick=e=>{const b=e.target.closest('.nav');if(b)location.hash=b.dataset.v};
 $('#q').oninput=()=>{if(view!=='list')location.hash='';else render()};
 $('#main').addEventListener('click',e=>{const c=e.target.closest('.card');if(c)location.hash=c.dataset.id;const f=e.target.closest('.fb');if(f){$('#light img').src=f.dataset.src;$('#light').hidden=false}});
 $('#light').onclick=()=>{$('#light').hidden=true};
-const timers={};
-$('#main').addEventListener('input',e=>{
-  const t=e.target;if(!t.classList.contains('num'))return;
-  const v=digits(t.value);if(t.value!==v)t.value=v;fit(t);
-  clearTimeout(timers[t.dataset.k]);
-  timers[t.dataset.k]=setTimeout(()=>store.set('sm-note-'+t.dataset.k,v.trim()),300);
-});
-
 const setText=(sel,v)=>{if(v!=null)$(sel).textContent=v};
 document.title=T.标题||document.title;
 $('.brand').innerHTML=`<span class="logo">${esc(T.图标字||'')}</span>${esc(T.标题||'')}`;
